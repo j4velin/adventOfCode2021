@@ -3,7 +3,7 @@ import java.util.*
 /**
  * @return a sequence of the result of the [compareTo] invocation on each element and its predecessor
  */
-fun <T : Comparable<T>> Sequence<T>.compareWithPrevious(): Sequence<Int> {
+private fun <T : Comparable<T>> Sequence<T>.compareWithPrevious(): Sequence<Int> {
     val input = this
     return sequence {
         yield(0)
@@ -20,7 +20,7 @@ fun <T : Comparable<T>> Sequence<T>.compareWithPrevious(): Sequence<Int> {
  *
  * @property measurements all the measurements in this window. New measurements can be added using the [add] method
  */
-data class MeasurementWindow(private val measurements: MutableList<Int> = mutableListOf()) :
+private data class MeasurementWindow(private val measurements: MutableList<Int> = mutableListOf()) :
     Comparable<MeasurementWindow> {
 
     override fun compareTo(other: MeasurementWindow) = measurements.sum().compareTo(other.measurements.sum())
@@ -28,9 +28,9 @@ data class MeasurementWindow(private val measurements: MutableList<Int> = mutabl
     fun add(measurement: Int) = measurements.add(measurement)
 }
 
-fun part1(input: List<Int>) = input.asSequence().compareWithPrevious().count { it > 0 }
+private fun part1(input: List<Int>) = input.asSequence().compareWithPrevious().count { it > 0 }
 
-fun part2(input: List<Int>): Int {
+private fun part2(input: List<Int>): Int {
     val windows = 3
     val windowQueue: Queue<MeasurementWindow> = ArrayDeque(windows)
     val windowSequence = sequence {
