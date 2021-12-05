@@ -1,5 +1,7 @@
 # adventOfCode2021
 
+![](https://img.shields.io/badge/days%20completed-2-red)
+
 Welcome to the Advent of Code[^aoc] Kotlin project created by [j4velin][github] using the [Advent of Code Kotlin Template][template] delivered by JetBrains.
 
 In this repository, j4velin is about to provide solutions for the puzzles using [Kotlin][kotlin] language.
