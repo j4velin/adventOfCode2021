@@ -32,7 +32,7 @@ private fun IntArray.getMedianIndex(): Int {
  * @param consumptionRate a function to calculate the fuel necessary for one submarine to move a given distance
  * @return the total fuel necessary to move all submarines to [destinationIndex]
  */
-private fun getTotalFuelConsumption(
+private inline fun getTotalFuelConsumption(
     positions: IntArray,
     destinationIndex: Int,
     consumptionRate: (Int) -> Int
