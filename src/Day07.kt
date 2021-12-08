@@ -1,7 +1,6 @@
 import kotlin.math.abs
 import kotlin.math.min
 
-
 /**
  * Transforms this [IntArray] so that at each index in the result array gives the amount of occurrences of that index
  * value in the original array
@@ -36,8 +35,7 @@ private inline fun getTotalFuelConsumption(
     positions: IntArray,
     destinationIndex: Int,
     consumptionRate: (Int) -> Int
-) =
-    positions.withIndex().sumOf { it.value * consumptionRate(abs(destinationIndex - it.index)) }
+) = positions.withIndex().sumOf { it.value * consumptionRate(abs(destinationIndex - it.index)) }
 
 private fun part1(input: List<String>): Int {
     val array = input.first().split(",").map { it.toInt() }.toIntArray().consolidate()

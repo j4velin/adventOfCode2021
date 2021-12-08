@@ -75,7 +75,7 @@ private fun part2(input: List<String>): Int {
         when {
             boards.isEmpty() -> return 0 // no single last winner
             boards.size > 1 -> boards = boards.filter { it.mark(number) == null }
-            boards.size == 1 -> boards.first().mark(number)?.run { return this }
+            else -> boards.first().mark(number)?.run { return this }
         }
     }
     // loser board does never win -> can not calculate score

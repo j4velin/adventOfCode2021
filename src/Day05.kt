@@ -11,16 +11,8 @@ private data class Point(val x: Int, val y: Int) {
      * @return a new point instance which is moved 1 step in the direction of [end]
      */
     fun moveTo(end: Point): Point {
-        val nextX = when ((end.x - x).sign) {
-            1 -> x + 1
-            -1 -> x - 1
-            else -> x
-        }
-        val nextY = when ((end.y - y).sign) {
-            1 -> y + 1
-            -1 -> y - 1
-            else -> y
-        }
+        val nextX = x + (end.x - x).sign
+        val nextY = y + (end.y - y).sign
         return Point(nextX, nextY)
     }
 }
