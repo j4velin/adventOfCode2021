@@ -1,62 +1,61 @@
-/**
- * Transforms the input in a 2D Byte array representing the heights at each position
- */
-private fun getHeightMap(input: List<String>) =
-    input.map { str -> str.map { it.digitToInt().toByte() }.toByteArray() }.toTypedArray()
+private class HeightMap(input: List<String>) {
 
-/**
- * Represents a point in a height map
- * @property x the x-coordinate
- * @property y the y-coordinate
- * @property height the height at that point
- */
-private data class HeightMapPoint(val x: Int, val y: Int, val height: Byte)
+    // heightmap is internally represented as a 2D Byte array
+    private val data = input.map { str -> str.map { it.digitToInt().toByte() }.toByteArray() }.toTypedArray()
 
-/**
- * @param point a point within this height map to get the neighbouring points for
- * @return a list of all the neighbours of the given point (horizontal & vertical neighbours only)
- */
-private fun Array<ByteArray>.getNeighboursOf(point: HeightMapPoint) = buildList {
-    val x = point.x
-    val y = point.y
-    val map = this@getNeighboursOf
-    // points on the edged and the corners have only 2 or 3 neighbours
-    if (x > 0) {
-        add(HeightMapPoint(x - 1, y, map[x - 1][y]))
-    }
-    if (x < map.size - 1) {
-        add(HeightMapPoint(x + 1, y, map[x + 1][y]))
-    }
-    if (y > 0) {
-        add(HeightMapPoint(x, y - 1, map[x][y - 1]))
-    }
-    if (y < map[x].size - 1) {
-        add(HeightMapPoint(x, y + 1, map[x][y + 1]))
-    }
-}
-
-/**
- * @return all the 'low points' in this height map
- */
-private fun Array<ByteArray>.getLowPoints() = sequence {
-    val map = this@getLowPoints
-    for (x in map.indices) {
-        for (y in map[x].indices) {
-            val current = HeightMapPoint(x, y, map[x][y])
-            val neighbours = map.getNeighboursOf(current)
-            if (neighbours.all { it.height > current.height }) {
-                yield(current)
+    /**
+     * all the 'low points' in this height map
+     */
+    val lowPoints = sequence {
+        for (x in data.indices) {
+            for (y in data[x].indices) {
+                val current = Point(x, y, data[x][y])
+                val neighbours = getNeighboursOf(current)
+                if (neighbours.all { it.height > current.height }) {
+                    yield(current)
+                }
             }
         }
     }
+
+    /**
+     * @param point a point within this height map to get the neighbouring points for
+     * @return a list of all the neighbours of the given point (horizontal & vertical neighbours only)
+     */
+    fun getNeighboursOf(point: Point) = buildList {
+        val x = point.x
+        val y = point.y
+        // points on the edged and the corners have only 2 or 3 neighbours
+        if (x > 0) {
+            add(Point(x - 1, y, data[x - 1][y]))
+        }
+        if (x < data.size - 1) {
+            add(Point(x + 1, y, data[x + 1][y]))
+        }
+        if (y > 0) {
+            add(Point(x, y - 1, data[x][y - 1]))
+        }
+        if (y < data[x].size - 1) {
+            add(Point(x, y + 1, data[x][y + 1]))
+        }
+    }
+
+    /**
+     * Represents a point in a height map
+     *
+     * @property x the x-coordinate
+     * @property y the y-coordinate
+     * @property height the height at that point
+     */
+    data class Point(val x: Int, val y: Int, val height: Byte)
 }
 
-private fun part1(input: List<String>) = getHeightMap(input).getLowPoints().map { it.height + 1 }.sum()
+private fun part1(input: List<String>) = HeightMap(input).lowPoints.map { it.height + 1 }.sum()
 
 private fun part2(input: List<String>): Int {
-    val heightMap = getHeightMap(input)
-    return heightMap.getLowPoints().map { lowPoint ->
-        val basin = mutableSetOf<HeightMapPoint>()
+    val heightMap = HeightMap(input)
+    return heightMap.lowPoints.map { lowPoint ->
+        val basin = mutableSetOf<HeightMap.Point>()
         val queue = mutableListOf(lowPoint)
         while (queue.isNotEmpty()) {
             val current = queue.removeFirst()
