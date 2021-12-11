@@ -45,7 +45,7 @@ private class OctopusArray(input: List<String>) {
     private fun increaseAllLevels() = increaseArea(Pair(0, 0), Pair(maxX, maxY))
 
     /**
-     * Increases the energy level of the center octopus and all of th octopuses in its surrounding neighbourhood
+     * Increases the energy level of the center octopus and all the octopuses in its surrounding neighbourhood
      *
      * @param center the position of the octopus in the center
      * @return a collection of all octopuses which became ready to flash during this increase operation
@@ -64,8 +64,7 @@ private class OctopusArray(input: List<String>) {
         val readyToFlash = mutableSetOf<Octopus>()
         for (i in max(0, topLeft.first)..min(maxX, bottomRight.first)) {
             for (j in max(0, topLeft.second)..min(maxY, bottomRight.second)) {
-                data[i][j]++
-                if (data[i][j] > ENERGY_THRESHOLD) {
+                if (++data[i][j] > ENERGY_THRESHOLD) {
                     readyToFlash.add(Pair(i, j))
                 }
             }
