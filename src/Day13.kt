@@ -1,6 +1,6 @@
 import kotlin.math.max
 
-fun Boolean.toInt() = if (this) 1 else 0
+private fun Boolean.toInt() = if (this) 1 else 0
 
 /**
  * Folds the transparent input page according to the given instructions
