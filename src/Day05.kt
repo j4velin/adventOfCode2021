@@ -2,19 +2,16 @@ import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.sign
 
-private data class Point(val x: Int, val y: Int) {
-
-    /**
-     * Creates a new [Point] by moving this instance 1 step in the direction of the given [end] point
-     *
-     * @param end the destination in which direction to move the new point
-     * @return a new point instance which is moved 1 step in the direction of [end]
-     */
-    fun moveTo(end: Point): Point {
-        val nextX = x + (end.x - x).sign
-        val nextY = y + (end.y - y).sign
-        return Point(nextX, nextY)
-    }
+/**
+ * Creates a new [Point] by moving this instance 1 step in the direction of the given [end] point
+ *
+ * @param end the destination in which direction to move the new point
+ * @return a new point instance which is moved 1 step in the direction of [end]
+ */
+fun Point.moveTo(end: Point): Point {
+    val nextX = x + (end.x - x).sign
+    val nextY = y + (end.y - y).sign
+    return Point(nextX, nextY)
 }
 
 private data class Line(val start: Point, val end: Point) : Iterable<Point> {
