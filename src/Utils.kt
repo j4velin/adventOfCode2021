@@ -37,6 +37,13 @@ data class Point(val x: Int, val y: Int) {
         }
     }
 
+    /**
+     * @param dx the delta in x direction
+     * @param dy the delta in y direction
+     * @return the new resulting point, which is created by moving this point along the given vector
+     */
+    fun move(dx: Int, dy: Int) = Point(x + dx, y + dy)
+
     private fun isWithin(grid: Pair<Point, Point>) =
         x >= grid.first.x && x <= grid.second.x && y >= grid.first.y && y <= grid.second.y
 }

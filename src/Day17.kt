@@ -1,56 +1,83 @@
-private fun getPositions(input: String): Sequence<List<Pair<Int, Int>>> {
-    // input: "target area: x=20..30, y=-10..-5"
+import kotlin.math.absoluteValue
+import kotlin.math.max
+import kotlin.math.sign
+
+/**
+ * A path is just a collection of points
+ * @property points the points along this path
+ */
+@JvmInline
+private value class Path(val points: List<Point>)
+
+/**
+ * @param vx the initial x velocity
+ * @param vy the initial y velocity
+ * @return a sequence of points when starting at (0,0) and the given initial accelerations
+ */
+private fun getPositions(vx: Int, vy: Int): Sequence<Point> {
+    var currentVelocityX = vx
+    var currentVelocityY = vy
+    return generateSequence(Point(0, 0)) {
+        val p = it.move(currentVelocityX, currentVelocityY)
+        currentVelocityX -= currentVelocityX.sign
+        currentVelocityY--
+        p
+    }
+}
+
+/**
+ * @param input the input describing the position of the target area in the form of "target area: x=20..30, y=-10..-5"
+ * @return all valid paths, which have at least one position within the given target area when starting at point (0,0)
+ */
+private fun getValidPaths(input: String): List<Path> {
     val area = input.drop("target area: x=".length).split(", y=").map { it.split("..") }
     val areaX = IntRange(area[0][0].toInt(), area[0][1].toInt())
     val areaY = IntRange(area[1][0].toInt(), area[1][1].toInt())
 
-    // TODO: currently assumed that target area is to the right somewhere
-    // calculate set x coordinates which have at least one position within areaX
+    // TODO: currently assumed that target area is on the bottom right somewhere
+    // calculate initial x velocities, which result in an x coordinate within areaX at some point
     // example: x positions with velocity 5 after each step: 0, 5, 5+4, 5+4+3, 5+4+3+2, 5+4+3+2+1
-    val horizontalPositions = IntRange(1, areaX.last).map { velocity ->
-        buildList {
-            var previousPositionX = 0
-            add(previousPositionX)
-            for (v in velocity downTo 1) {
-                add(previousPositionX + v)
-                previousPositionX += v
+    val validXAccelerations = IntRange(1, areaX.last).filter { initialVelocity ->
+        var positionX = 0
+        for (velocityX in initialVelocity downTo 0) {
+            if (positionX in areaX) {
+                return@filter true
+            }
+            positionX += velocityX
+        }
+        false
+    }
+
+    // same for y, but here we can shoot up- and downwards (or not shoot in y direction at all and just let it fall)
+    val maxY = max(areaY.first.absoluteValue, areaY.last.absoluteValue)
+    val validYAccelerations = IntRange(-maxY, maxY).filter { initialVelocity ->
+        var positionY = 0
+        var velocityY = initialVelocity
+        while (positionY >= areaY.first) {
+            if (positionY in areaY) {
+                return@filter true
+            }
+            positionY += velocityY
+            velocityY--
+        }
+        false
+    }
+
+    // build list of all paths
+    return buildList {
+        for (vx in validXAccelerations) {
+            for (vy in validYAccelerations) {
+                // generate positions as long as there is a chance to end up within the target area
+                add(Path(getPositions(vx, vy).takeWhile { it.x <= areaX.last && it.y >= areaY.first }.toList()))
             }
         }
-    }.filter { positions -> positions.any { it in areaX } }
-
-    // generate initial y accelerations
-    // TODO: think of a way to calculate the bounds...
-    val lowerBound = -500
-    val upperBound = lowerBound * -2
-    return generateSequence(lowerBound) { it + 1 }.take(upperBound).flatMap { velocity ->
-        buildList {
-            addAll(horizontalPositions.map { xPositions ->
-                val list = mutableListOf<Pair<Int, Int>>()
-                var currentPositionY = 0
-                var currentVelocityY = velocity
-                var lastPositionX = 0
-                for (xPos in xPositions) {
-                    list.add(Pair(xPos, currentPositionY))
-                    currentPositionY += currentVelocityY
-                    currentVelocityY--
-                    lastPositionX = xPos
-                }
-                // even if x doesn't change anymore, y can still fall lower -> keep adding positions until we're
-                // definitely below the target
-                while (currentPositionY >= areaY.first) {
-                    list.add(Pair(lastPositionX, currentPositionY))
-                    currentPositionY += currentVelocityY
-                    currentVelocityY--
-                }
-                list
-            })
-        }
-    }.filter { it.any { pos -> pos.first in areaX && pos.second in areaY } }
+        // filter only those paths, where at least one position is within the target area (aka 'valid paths')
+    }.filter { it.points.any { pos -> pos.x in areaX && pos.y in areaY } }
 }
 
-private fun part1(input: String) = getPositions(input).map { positions -> positions.maxOf { it.second } }.maxOf { it }
+private fun part1(input: String) = getValidPaths(input).map { path -> path.points.maxOf { it.y } }.maxOf { it }
 
-private fun part2(input: String) = getPositions(input).count()
+private fun part2(input: String) = getValidPaths(input).count()
 
 fun main() {
 
