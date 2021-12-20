@@ -12,7 +12,7 @@ private class ImageEnhancer(input: String) {
      * @param inputImage the image to enhance
      * @return the enhanced images
      */
-    fun apply(inputImage: Image): Image {
+    operator fun invoke(inputImage: Image): Image {
         val maxX = inputImage.maxX + 2
         val maxY = inputImage.maxY + 2
         val array = Array(maxY) { BooleanArray(maxX) }
@@ -33,50 +33,38 @@ private class ImageEnhancer(input: String) {
         // if the first character of the enhancement algorithm is true (e.g. '#'), then enhancing an image will enlighten
         // every 'dark area' from the input image - as we deal with infinite images, this will be an infinite amount of
         // pixels for every odd enhancement. We only store the 'outside pixel' once though
-        return Image(array, if (enhancement.first()) !inputImage.outside else false)
+        return Image(array, if (enhancement.first()) !inputImage.background else false)
     }
 }
 
 /**
  * Represents a black/white image (light/dark pixels)
  * @param array the input pixels
- * @property outside true, if the pixel outside this image's border should be considered to be "on", false by default
+ * @property background true, if the pixel outside this image's border (aka the 'background') should be considered to be
+ * "on"/"light", false by default
  */
-class Image(private val array: Array<BooleanArray>, val outside: Boolean = false) {
+class Image(private val array: Array<BooleanArray>, val background: Boolean = false) {
 
     val maxX = array.firstOrNull()?.size ?: 0
     val maxY = array.size
 
-    companion object {
-        fun fromString(input: List<String>) =
-            Image(input.map { line -> line.map { it == '#' }.toBooleanArray() }.toTypedArray())
-    }
+    /**
+     * Constructs an image from a list of strings
+     */
+    constructor(input: List<String>) : this(input.map { line -> line.map { it == '#' }.toBooleanArray() }
+        .toTypedArray())
 
-    operator fun get(x: Int, y: Int): Boolean {
-        return if (y in array.indices && x in array[y].indices) {
-            array[y][x]
-        } else {
-            outside
-        }
-    }
+    /**
+     * @return true, if the pixel at [x],[y] is "lit" or [background] if the given coordinate is outside the images'
+     * border
+     */
+    operator fun get(x: Int, y: Int) = if (y in array.indices && x in array[y].indices) array[y][x] else background
 
     /**
      * @return the total number of "on"/"lit" pixels in this image. Might be [Double.POSITIVE_INFINITY]
      */
-    fun countLitPixels(): Number {
-        if (outside) {
-            return Double.POSITIVE_INFINITY
-        }
-        var count = 0
-        for (x in 0..maxX) {
-            for (y in 0..maxY) {
-                if (get(x, y)) {
-                    count++
-                }
-            }
-        }
-        return count
-    }
+    fun countLitPixels(): Number =
+        if (background) Double.POSITIVE_INFINITY else array.sumOf { line -> line.count { it } }
 
     override fun toString(): String {
         val width = array.firstOrNull()?.size ?: 0
@@ -84,10 +72,10 @@ class Image(private val array: Array<BooleanArray>, val outside: Boolean = false
         return buildString {
             for (y in 0 until height) {
                 for (x in 0 until width) {
-                    if (array[y][x]) {
-                        append("#")
+                    if (get(x, y)) {
+                        append('#')
                     } else {
-                        append(".")
+                        append('.')
                     }
                 }
                 appendLine()
@@ -97,19 +85,19 @@ class Image(private val array: Array<BooleanArray>, val outside: Boolean = false
 }
 
 private fun part1(input: List<String>): Int {
-    val enhancer = ImageEnhancer(input.first())
-    var image = Image.fromString(input.drop(2))
+    val enhance = ImageEnhancer(input.first())
+    var image = Image(input.drop(2))
 
-    repeat(2) { image = enhancer.apply(image) }
+    repeat(2) { image = enhance(image) }
 
     return image.countLitPixels().toInt()
 }
 
 private fun part2(input: List<String>): Int {
-    val enhancer = ImageEnhancer(input.first())
-    var image = Image.fromString(input.drop(2))
+    val enhance = ImageEnhancer(input.first())
+    var image = Image(input.drop(2))
 
-    repeat(50) { image = enhancer.apply(image) }
+    repeat(50) { image = enhance(image) }
 
     return image.countLitPixels().toInt()
 }
