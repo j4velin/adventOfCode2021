@@ -13,6 +13,16 @@ fun readInput(name: String) = File("src", "$name.txt").readLines()
  */
 fun String.md5(): String = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteArray())).toString(16)
 
+fun Int.modulo(mod: Int) = if (this > mod) this % mod else this
+
+/**
+ * Generates a "cartesian product" of two sequences
+ *
+ * @param other the sequence to 'mix' with this
+ * @return a sequence of the cartesian product of [this] and [other]
+ */
+fun <T, U> Sequence<T>.withEachOf(other: Sequence<U>): Sequence<Pair<T, U>> = flatMap { t -> other.map { u -> t to u } }
+
 /**
  * Data class representing a point on a 2D area
  */

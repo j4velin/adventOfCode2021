@@ -1,5 +1,3 @@
-fun Int.modulo(mod: Int) = if (this > mod) this % mod else this
-
 /**
  * @param inputMap the input risk map, see [getInputMap]
  * @return the lowest possible risk of all paths from the upper left corner to the bottom right corner
