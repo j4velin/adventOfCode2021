@@ -1,7 +1,12 @@
 import java.util.*
+import kotlin.math.max
+import kotlin.math.min
 
 private data class Instruction(
-    val newState: Boolean, val xRange: IntRange, val yRange: IntRange, val zRange: IntRange
+    val newState: Boolean,
+    val xRange: IntRange,
+    val yRange: IntRange,
+    val zRange: IntRange
 ) {
     companion object {
         fun fromString(input: String): Instruction {
@@ -24,7 +29,7 @@ private fun rangeFromString(input: String): IntRange {
 }
 
 /**
- * Applies the given instructions on part of the reactor
+ * Applies the given instructions on a part of the reactor
  * @param instructions the instructions to apply
  * @param xRange the range in x dimension to consider
  * @param yRange the range in y dimension to consider (default: same as [xRange])
@@ -64,45 +69,111 @@ private fun applyInstructions(
 private fun part1(input: List<String>) =
     applyInstructions(input.map(Instruction.Companion::fromString), IntRange(-50, 50))
 
-private fun part2(input: List<String>): Long {
-    val instructions = input.map(Instruction.Companion::fromString)
-    var turnedOnCubes = 0L
 
-    val min = instructions.minOf { minOf(it.xRange.first, it.yRange.first, it.zRange.first) }
-    val max = instructions.maxOf { maxOf(it.xRange.last, it.yRange.last, it.zRange.last) }
+private data class Cuboid(val x: IntRange, val y: IntRange, val z: IntRange) {
 
-    val cubesPerDimensionPerCheck = 1000
-    val checksPerDimension = (max - min) / cubesPerDimensionPerCheck
+    private val isEmpty = x.isEmpty() || y.isEmpty() || z.isEmpty()
+    val cubesWithIn = x.count().toLong() * y.count() * z.count()
 
-    for (xOffset in 0..checksPerDimension) {
-        val xIndex = min + xOffset * cubesPerDimensionPerCheck
-        for (yOffset in 0..checksPerDimension) {
-            val yIndex = min + yOffset * cubesPerDimensionPerCheck
-            for (zOffset in 0..checksPerDimension) {
-                val zIndex = min + zOffset * cubesPerDimensionPerCheck
-                turnedOnCubes += applyInstructions(
-                    instructions,
-                    IntRange(xIndex, xIndex + cubesPerDimensionPerCheck),
-                    IntRange(yIndex, yIndex + cubesPerDimensionPerCheck),
-                    IntRange(zIndex, zIndex + cubesPerDimensionPerCheck)
-                )
-            }
+    /**
+     * @return true, if the [other] cuboid overlaps with this one (e.g. has at least one cube in common)
+     */
+    fun overlapsWith(other: Cuboid) =
+        (x.last > other.x.first && x.first < other.x.last) &&
+                (y.last > other.y.first && y.first < other.y.last) &&
+                (z.last > other.z.first && z.first < other.z.last)
+
+    /**
+     * @return true, if the [other] cuboid is contained within this cuboid
+     */
+    fun contains(other: Cuboid) =
+        x.first <= other.x.first && x.last >= other.x.last &&
+                y.first <= other.y.first && y.last >= other.y.last &&
+                z.first <= other.z.first && z.last >= other.z.last
+
+    /**
+     * Removes the cubes which intersect in this cuboid and the [cut] cuboid
+     * @return a set of smaller [Cuboid]s, which are created by "cutting" the cubes of [cut] which intersect with this [Cuboid]
+     */
+    fun cut(cut: Cuboid): Collection<Cuboid> {
+        val z1 = Cuboid(x, y, z.first until cut.z.first)
+        val z2 = Cuboid(x, y, cut.z.last + 1..z.last)
+
+        val y1 = Cuboid(x, y.first until cut.y.first, max(z.first, cut.z.first)..min(z.last, cut.z.last))
+        val y2 = Cuboid(x, cut.y.last + 1..y.last, max(z.first, cut.z.first)..min(z.last, cut.z.last))
+
+        val x1 = Cuboid(
+            x.first until cut.x.first,
+            max(y.first, cut.y.first)..min(y.last, cut.y.last),
+            max(z.first, cut.z.first)..min(z.last, cut.z.last)
+        )
+        val x2 = Cuboid(
+            cut.x.last + 1..x.last,
+            max(y.first, cut.y.first)..min(y.last, cut.y.last),
+            max(z.first, cut.z.first)..min(z.last, cut.z.last)
+        )
+
+        return setOf(x1, x2, y1, y2, z1, z2).filterNot { it.isEmpty }
+    }
+}
+
+/**
+ * Adds the new cubes contained within [newCuboid] to the set of distinct [Cuboid]s
+ *
+ * @param existing the existing cuboids
+ * @param newCuboid the new cuboid to add
+ * @return a set of cuboids, which do not have any intersecting cubes
+ */
+private fun addCuboid(existing: Set<Cuboid>, newCuboid: Cuboid): Set<Cuboid> {
+    val overlap = existing.find { it.overlapsWith(newCuboid) }
+    return if (overlap == null) {
+        existing.toMutableSet().also { it.add(newCuboid) }
+    } else {
+        val newCuboids = newCuboid.cut(overlap)
+        if (newCuboids.isEmpty()) {
+            existing
+        } else {
+            newCuboids.flatMap { addCuboid(existing, it) }.toSet()
         }
     }
-
-    return turnedOnCubes
 }
+
+/**
+ * @param instruction instruction to apply
+ * @param cuboids a set of cuboids which contain the cubes which are turned on
+ * @return a new set of cuboids with the cubes that are turned on after applying [instruction]
+ */
+private fun applyInstruction(instruction: Instruction, cuboids: Set<Cuboid>): Set<Cuboid> {
+    val newCuboid = Cuboid(instruction.xRange, instruction.yRange, instruction.zRange)
+    return if (instruction.newState) { // instruction will turn on some cubes
+        addCuboid(cuboids, newCuboid)
+    } else { // instruction will turn off some cubes
+        cuboids.flatMap {
+            if (it.overlapsWith(newCuboid)) {
+                it.cut(newCuboid)
+            } else {
+                setOf(it)
+            }
+        }.toSet()
+    }
+}
+
+private fun part2(input: List<String>): Long {
+    val instructions = input.map(Instruction.Companion::fromString)
+    var cuboids = emptySet<Cuboid>()
+    instructions.forEach { cuboids = applyInstruction(it, cuboids) }
+    return cuboids.sumOf { it.cubesWithIn }
+}
+
 
 fun main() {
 
     // test if implementation meets criteria from the description, like:
     val testInput = readInput("Day22_test")
     check(part1(testInput) == 474140)
-    //check(part2(testInput) == 2758514936282235)
+    check(part2(testInput) == 2758514936282235L)
 
     val input = readInput("Day22")
     println(part1(input))
-    // println(part2(input))
-
-
+    println(part2(input))
 }
